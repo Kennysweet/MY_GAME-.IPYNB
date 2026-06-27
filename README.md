@@ -1,12 +1,36 @@
-# MY_GAME-.IPYNB
-This notebook contains a simple ping pong game built with Python and a browser-based version for easy play.
+# 🏓 MY_GAME-.IPYNB
 
-## Run the browser version
-Open [index.html](index.html) in a browser.
+A simple Ping Pong game built with Python and a browser-based version for easy play.
 
-## Controls
-- Player 1: W / S
-- Player 2: Arrow Up / Arrow Down
-- Space: pause or resume
-- M: toggle AI mode
-- R: restart the match
+## 🚀 Quick Start - Launch the Game
+
+### Start the Server
+Run the built-in task to start the development server:
+```bash
+python3 -m http.server 8000
+```
+
+Or use the VS Code task: **Tasks → Run Task → Serve Ping Pong**
+
+### Play the Game
+**[▶️ LAUNCH GAME - http://localhost:8000](http://localhost:8000)**
+
+*Note: Make sure the server is running before clicking the link above.*
+
+## 🎮 Game Versions
+
+### Browser Version (Recommended)
+Open [index.html](index.html) in a browser for the best experience.
+
+### Python Version
+Run the Python game with turtle graphics:
+```bash
+python3 ping_pong.py
+```
+
+## ⌨️ Controls
+- **Player 1:** W / S
+- **Player 2:** Arrow Up / Arrow Down
+- **Space:** Pause or resume
+- **M:** Toggle AI mode
+- **R:** Restart the match
