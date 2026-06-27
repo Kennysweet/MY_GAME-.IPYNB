@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ping Pong</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #0f172a, #111827);
+        color: #f8fafc;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .game-shell {
+        text-align: center;
+      }
+
+      canvas {
+        border: 3px solid #f8fafc;
+        border-radius: 10px;
+        background: #020617;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+
+      .controls,
+      .status {
+        margin-top: 12px;
+        color: #cbd5e1;
+        font-size: 0.95rem;
+      }
+
+      .title {
+        margin-bottom: 10px;
+        font-size: 1.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(2, 6, 23, 0.82);
+        color: white;
+        font-size: 1.2rem;
+        border-radius: 10px;
+        z-index: 2;
+      }
+
+      .overlay-card {
+        text-align: center;
+        padding: 22px 28px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 14px;
+        background: rgba(15, 23, 42, 0.9);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      }
+
+      .overlay-card h2 {
+        margin: 0 0 8px;
+        font-size: 1.5rem;
+      }
+
+      .overlay-card p {
+        margin: 0 0 16px;
+        color: #cbd5e1;
+      }
+
+      .start-btn {
+        padding: 10px 16px;
+        border: none;
+        border-radius: 999px;
+        background: #fbbf24;
+        color: #111827;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .start-btn:hover {
+        background: #f59e0b;
+      }
+
+      .game-shell {
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-shell">
+      <div class="title">Ping Pong</div>
+      <div class="overlay" id="overlay">
+        <div class="overlay-card">
+          <h2 id="overlayTitle">Ping Pong</h2>
+          <p id="overlayText">Click the button to start playing.</p>
+          <button class="start-btn" id="startButton">Play Game</button>
+        </div>
+      </div>
+      <canvas id="gameCanvas" width="800" height="500"></canvas>
+      <div class="controls">
+        Player 1: W / S · Player 2: ↑ / ↓ · Space = pause · M = AI toggle · R = restart
+      </div>
+      <div class="status" id="statusText">Single-player mode: the right paddle is controlled by AI.</div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const game = {
+        width: canvas.width,
+        height: canvas.height,
+        leftPaddle: { x: 20, y: canvas.height / 2 - 50, width: 12, height: 100, speed: 7 },
+        rightPaddle: { x: canvas.width - 32, y: canvas.height / 2 - 50, width: 12, height: 100, speed: 7 },
+        ball: { x: canvas.width / 2, y: canvas.height / 2, size: 10, vx: 5, vy: 3 },
+        scores: { left: 0, right: 0 },
+        keys: {},
+        running: false,
+        paused: false,
+        aiEnabled: true,
+        winScore: 5,
+        message: "",
+      };
+
+      const statusText = document.getElementById("statusText");
+      const overlay = document.getElementById("overlay");
+      const overlayTitle = document.getElementById("overlayTitle");
+      const overlayText = document.getElementById("overlayText");
+      const startButton = document.getElementById("startButton");
+
+      function resetBall(dir = 1) {
+        game.ball.x = game.width / 2;
+        game.ball.y = game.height / 2;
+        game.ball.vx = 5 * dir;
+        game.ball.vy = 3 * (Math.random() > 0.5 ? 1 : -1);
+      }
+
+      function updateStatus() {
+        statusText.textContent = game.aiEnabled
+          ? "Single-player mode: the right paddle is controlled by AI."
+          : "Two-player mode: use the arrow keys for the right paddle.";
+      }
+
+      function showOverlay(title, text, buttonText = "Play Again") {
+        overlayTitle.textContent = title;
+        overlayText.textContent = text;
+        startButton.textContent = buttonText;
+        overlay.style.display = "grid";
+      }
+
+      function hideOverlay() {
+        overlay.style.display = "none";
+      }
+
+      function startGame() {
+        resetGame();
+        game.running = true;
+        game.paused = false;
+        hideOverlay();
+      }
+
+      function resetGame() {
+        game.scores.left = 0;
+        game.scores.right = 0;
+        game.message = "";
+        resetBall(1);
+      }
+
+      function checkWin() {
+        if (game.scores.left >= game.winScore) {
+          game.message = "Player 1 wins! Press R to play again";
+          game.running = false;
+          showOverlay("Game Over", "Player 1 wins!", "Play Again");
+        } else if (game.scores.right >= game.winScore) {
+          game.message = game.aiEnabled ? "AI wins! Press R to play again" : "Player 2 wins! Press R to play again";
+          game.running = false;
+          showOverlay("Game Over", game.aiEnabled ? "AI wins!" : "Player 2 wins!", "Play Again");
+        }
+      }
+
+      function drawRect(x, y, width, height, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, width, height);
+      }
+
+      function drawCircle(x, y, radius, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawNet() {
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.setLineDash([8, 8]);
+        ctx.beginPath();
+        ctx.moveTo(game.width / 2, 0);
+        ctx.lineTo(game.width / 2, game.height);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      function drawScore() {
+        ctx.fillStyle = "white";
+        ctx.font = "bold 42px Arial";
+        ctx.fillText(game.scores.left, game.width / 2 - 70, 45);
+        ctx.fillText(game.scores.right, game.width / 2 + 40, 45);
+      }
+
+      function updatePaddles() {
+        if (game.keys["KeyW"] && game.leftPaddle.y > 0) {
+          game.leftPaddle.y -= game.leftPaddle.speed;
+        }
+        if (game.keys["KeyS"] && game.leftPaddle.y + game.leftPaddle.height < game.height) {
+          game.leftPaddle.y += game.leftPaddle.speed;
+        }
+
+        if (game.aiEnabled) {
+          const targetY = game.ball.y - game.rightPaddle.height / 2;
+          if (game.rightPaddle.y + game.rightPaddle.height / 2 < targetY) {
+            game.rightPaddle.y += game.rightPaddle.speed;
+          } else if (game.rightPaddle.y + game.rightPaddle.height / 2 > targetY) {
+            game.rightPaddle.y -= game.rightPaddle.speed;
+          }
+          game.rightPaddle.y = Math.max(0, Math.min(game.height - game.rightPaddle.height, game.rightPaddle.y));
+        } else {
+          if (game.keys["ArrowUp"] && game.rightPaddle.y > 0) {
+            game.rightPaddle.y -= game.rightPaddle.speed;
+          }
+          if (game.keys["ArrowDown"] && game.rightPaddle.y + game.rightPaddle.height < game.height) {
+            game.rightPaddle.y += game.rightPaddle.speed;
+          }
+        }
+      }
+
+      function updateBall() {
+        game.ball.x += game.ball.vx;
+        game.ball.y += game.ball.vy;
+
+        if (game.ball.y <= 0 || game.ball.y + game.ball.size >= game.height) {
+          game.ball.vy *= -1;
+        }
+
+        const left = game.leftPaddle;
+        const right = game.rightPaddle;
+
+        if (
+          game.ball.x - game.ball.size <= left.x + left.width &&
+          game.ball.y + game.ball.size >= left.y &&
+          game.ball.y - game.ball.size <= left.y + left.height &&
+          game.ball.x > left.x
+        ) {
+          game.ball.x = left.x + left.width + game.ball.size;
+          game.ball.vx *= -1.05;
+          game.ball.vy += (game.ball.y - (left.y + left.height / 2)) * 0.01;
+        }
+
+        if (
+          game.ball.x + game.ball.size >= right.x &&
+          game.ball.y + game.ball.size >= right.y &&
+          game.ball.y - game.ball.size <= right.y + right.height &&
+          game.ball.x < right.x + right.width
+        ) {
+          game.ball.x = right.x - game.ball.size;
+          game.ball.vx *= -1.05;
+          game.ball.vy += (game.ball.y - (right.y + right.height / 2)) * 0.01;
+        }
+
+        if (game.ball.x < -20) {
+          game.scores.right += 1;
+          resetBall(-1);
+          checkWin();
+        } else if (game.ball.x > game.width + 20) {
+          game.scores.left += 1;
+          resetBall(1);
+          checkWin();
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, game.width, game.height);
+        drawNet();
+        drawRect(game.leftPaddle.x, game.leftPaddle.y, game.leftPaddle.width, game.leftPaddle.height, "#f8fafc");
+        drawRect(game.rightPaddle.x, game.rightPaddle.y, game.rightPaddle.width, game.rightPaddle.height, "#f8fafc");
+        drawCircle(game.ball.x, game.ball.y, game.ball.size, "#fbbf24");
+        drawScore();
+
+        if (game.message) {
+          ctx.fillStyle = "rgba(255,255,255,0.95)";
+          ctx.font = "bold 28px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(game.message, game.width / 2, game.height / 2);
+          ctx.textAlign = "start";
+        }
+      }
+
+      function loop() {
+        if (!game.paused && game.running) {
+          updatePaddles();
+          updateBall();
+        }
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      startButton.addEventListener("click", () => {
+        startGame();
+      });
+
+      window.addEventListener("keydown", (event) => {
+        game.keys[event.code] = true;
+        if (event.code === "KeyR") {
+          startGame();
+        }
+        if (event.code === "Space") {
+          event.preventDefault();
+          game.paused = !game.paused;
+          if (!game.paused && !game.message) {
+            game.running = true;
+          }
+        }
+        if (event.code === "KeyM") {
+          game.aiEnabled = !game.aiEnabled;
+          updateStatus();
+        }
+      });
+
+      window.addEventListener("keyup", (event) => {
+        game.keys[event.code] = false;
+      });
+
+      updateStatus();
+      resetBall(1);
+      draw();
+      loop();
+    </script>
+  </body>
+</html>

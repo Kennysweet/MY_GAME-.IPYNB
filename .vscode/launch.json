@@ -1,0 +1,11 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Open Ping Pong in Browser",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/open_game.py"
+    }
+  ]
+}
