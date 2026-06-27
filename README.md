@@ -13,7 +13,7 @@ python3 -m http.server 8000
 Or use the VS Code task: **Tasks → Run Task → Serve Ping Pong**
 
 ### Play the Game
-**[▶️ LAUNCH GAME - http://localhost:8000](http://localhost:8000)**
+**[▶️ LAUNCH GAME - https://symmetrical-sniffle-5vjv7wxrg4p3vxr7-8000.app.github.dev](https://symmetrical-sniffle-5vjv7wxrg4p3vxr7-8000.app.github.dev)**
 
 *Note: Make sure the server is running before clicking the link above.*
 
